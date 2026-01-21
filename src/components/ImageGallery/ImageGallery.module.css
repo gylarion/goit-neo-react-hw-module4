@@ -1,0 +1,9 @@
+.gallery {
+    list-style: none;
+    padding: 0;
+    margin: 20px auto;
+
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 12px;
+}

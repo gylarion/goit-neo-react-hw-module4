@@ -1,35 +1,75 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from "react";
+import { fetchImages } from "./services/unsplash-api";
+
+import SearchBar from "./components/SearchBar/SearchBar";
+import ImageGallery from "./components/ImageGallery/ImageGallery";
+import LoadMoreBtn from "./components/LoadMoreBtn/LoadMoreBtn";
+import Loader from "./components/Loader/Loader";
+import ErrorMessage from "./components/ErrorMessage/ErrorMessage";
+import ImageModal from "./components/ImageModal/ImageModal";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [query, setQuery] = useState("");
+  const [images, setImages] = useState([]);
+  const [page, setPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
+
+  useEffect(() => {
+    if (!query) return;
+
+    const loadImages = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const data = await fetchImages(query, page);
+        console.log(data);
+
+        setImages((prev) =>
+          page === 1 ? data.results : [...prev, ...data.results],
+        );
+      } catch {
+        setError("Failed to load images");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadImages();
+  }, [query, page]);
+
+  const handleSearch = (value) => {
+    setQuery(value);
+    setPage(1);
+    setImages([]);
+  };
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <SearchBar onSubmit={handleSearch} />
+
+      {error && <ErrorMessage message={error} />}
+
+      {images.length > 0 && (
+        <ImageGallery images={images} onImageClick={setSelectedImage} />
+      )}
+
+      {isLoading && <Loader />}
+
+      {images.length > 0 && !isLoading && (
+        <LoadMoreBtn onClick={() => setPage((prev) => prev + 1)} />
+      )}
+
+      {selectedImage && (
+        <ImageModal
+          image={selectedImage}
+          onClose={() => setSelectedImage(null)}
+        />
+      )}
     </>
-  )
+  );
 }
 
-export default App
+export default App;
